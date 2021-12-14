@@ -35,15 +35,24 @@ def send_page(user_id, first_name, chat_id,
                     if with_markup else None
     back_button = button(text="◀️", callback_data=f"{page_number - 1} {user_id} {first_name}")\
                     if with_markup else None
-    start_button = button(text="🕋 Al-Qur'an 🕋", callback_data=f"{1} {user_id} {first_name}")\
-                    if with_markup else None
+    start_button = (
+        button(text="🕋 Al-Qur'an 🕋", callback_data=f'1 {user_id} {first_name}')
+        if with_markup
+        else None
+    )
+
     buttons_list = [start_button] if is_start else [back_button, next_button]\
                     if with_markup else []
     markup.add(*buttons_list)
     if is_start or send:
-        BOT.send_photo(chat_id, page_url if page_url else open('./mt_al_quran_bot/al_quran.jpg', 'rb'),
-                        reply_to_message_id=message_id,reply_markup=markup if with_markup else None,
-                            caption=messages.get('start') if is_start else None)
+        BOT.send_photo(
+            chat_id,
+            page_url or open('./mt_al_quran_bot/al_quran.jpg', 'rb'),
+            reply_to_message_id=message_id,
+            reply_markup=markup if with_markup else None,
+            caption=messages.get('start') if is_start else None,
+        )
+
     else:
         urllib.request.urlretrieve(page_url, f"{page_number}.png")
         with open(f"{page_number}.png", 'rb') as page:
@@ -55,15 +64,14 @@ def open_page(text, user_id, first_name, chat_id,
                 message_id, with_markup):
     s_text = text.split()
     user_info = [user_id, first_name, chat_id, message_id]
-    if len(s_text) > 2 and s_text[2].isnumeric():
-        page_number = int(s_text[2])
-        if page_number > 0 and page_number < 604:
-            send_page(*user_info, 
-                        page_number, send=True, with_markup=with_markup)
-        else:
-            raise Exception("Jumlah halaman Al-Qur'an adalah 604")
-    else:
+    if len(s_text) <= 2 or not s_text[2].isnumeric():
         raise Exception("Silakan masukkan nomor halaman Contoh:\n%s 10" % (' '.join(s_text[:2])))
+    page_number = int(s_text[2])
+    if page_number > 0 and page_number < 604:
+        send_page(*user_info, 
+                    page_number, send=True, with_markup=with_markup)
+    else:
+        raise Exception("Jumlah halaman Al-Qur'an adalah 604")
 
 def get_info(ob):
     if ob.__class__ == types.Message:
@@ -99,7 +107,7 @@ def message_handler(message):
             open_page(text, *user_info, with_markup= not text.startswith(('ambil halaman')))
         except Exception as err:
             BOT.reply_to(message, err)
-    elif text in ['/repo']:
+    elif text in {'/repo'}:
         BOT.reply_to(message, "AL Qur-an Bot\n\nHow To Own This AL Qur-An Bot\n\n https://youtu.be/8kJFSGQU8PA")
 
 @BOT.callback_query_handler(func=lambda call:True)
